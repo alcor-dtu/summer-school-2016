@@ -95,5 +95,3 @@ test_values = test_hist.Values;
 smooth_dist = -log(sum(sqrt(smooth_values .* test_values)))
 rough_dist = -log(sum(sqrt(rough_values .* test_values)))
 super_smooth_dist = -log(sum(sqrt(super_rough_values .* test_values)))
-
-aaa = histcounts(theta_test,'Normalization','probability');
