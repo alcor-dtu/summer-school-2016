@@ -2,96 +2,49 @@ close all;
 clear;
 clc;
 
-rng(2);
-dataset_size = 1;
-data_size = 500;
+
+dataset_size = 100;
+samples = 10;
 bin_numbers = 41;
-rho = ones(dataset_size, data_size);
+
 %% Beckmann Data
 
 %smooth beckmann
 a_smooth = 0.1;
-eps1 = rand(dataset_size, data_size);
-eps2 = rand(dataset_size, data_size);
-phi = 2 * pi * eps2;
-theta_beckmann_smooth = atan(sqrt(-a_smooth^2 * log(1-eps1)));
-[x, y, z] = sph2cart(phi,pi/2 - theta_beckmann_smooth,rho);
-figure;
-plot3(x, y, z, '.r');
-axis equal;
-xlim([-1,1]);ylim([-1,1]);zlim([0,1]);
-xlabel('x');ylabel('y');zlabel('z');
-title('Smooth Normals');
-figure;
-smooth_hist = histogram(theta_beckmann_smooth, 'Normalization','probability');
-xlabel('\theta');
-title('Smooth Distribution');
-smooth_hist.BinEdges = linspace(0, pi/2,bin_numbers);
+% [smooth_t, smooth_phi, smooth_pdf] = DistributionGenerator(dataset_size, samples, a_smooth, 'beckmann');
 %rough beckmann
 a_rough = 0.5;
-eps1 = rand(dataset_size, data_size);
-eps2 = rand(dataset_size, data_size);
-phi = 2 * pi * eps2;
-theta_beckmann_rough = atan(sqrt(-a_rough^2 * log(1-eps1)));
-[x, y, z] = sph2cart(phi,pi/2 - theta_beckmann_rough,rho);
-figure;
-title('Rough Normals');
-plot3(x, y, z, '.r');
-axis equal;
-xlim([-1,1]);ylim([-1,1]);zlim([0,1]);
-xlabel('x');ylabel('y');zlabel('z');
-figure;
-title('Rough Distribution');
-rough_hist = histogram(theta_beckmann_rough,'Normalization','probability');
-xlabel('\theta');
-rough_hist.BinEdges = linspace(0, pi/2,bin_numbers);
+% [rough_t, rough_phi, rough_pdf] = DistributionGenerator(dataset_size, samples, a_rough, 'beckmann');
 %super rough beckmann
-a_super_rough = 0.99;
-eps1 = rand(dataset_size, data_size);
-eps2 = rand(dataset_size, data_size);
-phi = 2 * pi * eps2;
-theta_beckmann_super_rough = atan(sqrt(-a_super_rough^2 * log(1-eps1)));
-[x, y, z] = sph2cart(phi,pi/2 - theta_beckmann_super_rough,rho);
-figure;
-plot3(x, y, z, '.r');
-title('Super Rough Normals');
-axis equal;
-xlim([-1,1]);ylim([-1,1]);zlim([0,1]);
-xlabel('x');ylabel('y');zlabel('z');
-figure;
-title('Super Rough Distribution');
-super_rough_hist = histogram(theta_beckmann_super_rough, 'Normalization', 'probability');
-xlabel('\theta');
-super_rough_hist.BinEdges = linspace(0, pi/2,bin_numbers);
+a_very_rough = 0.99;
+% [very_rough_t, very_rough_phi, very_rough_pdf] = DistributionGenerator(dataset_size, samples, a_very_rough, 'beckmann');
+labels = [0.1, 0.4, 0.75 ,0.9];
+supervised_size = 2;
+[data, data_labels, supervised_data] = DataGenerator(dataset_size,samples,labels,supervised_size);
 
 
-smooth_values = smooth_hist.Values;
-rough_values = rough_hist.Values;
-super_rough_values = super_rough_hist.Values;
+labelled_data = cell(length(labels),1);
+for i=1:length(labels)
+    labelled_data{i} = {supervised_data(1 + supervised_size*(i-1):supervised_size*i,:),labels(i)};
+end
 
-smooth_rough_dist = -log(sum(sqrt(smooth_values .* rough_values)))
-smooth_super_rough_dist = -log(sum(sqrt(smooth_values .* super_rough_values)))
-rough_super_rough_dist = -log(sum(sqrt(super_rough_values .* rough_values)))
+classifiers = ComputeClassifier(labelled_data);
 
-a_test = rand(1);
-eps1 = rand(dataset_size, 20);
-eps2 = rand(dataset_size, 20);
-phi = 2 * pi * eps2;
-theta_test = atan(sqrt(-a_test^2 * log(1-eps1)));
-[x, y, z] = sph2cart(phi,pi/2 - theta_test,rho(1:20));
-figure;
-plot3(x, y, z, '.r');
-title('Test Normals');
-axis equal;
-xlim([-1,1]);ylim([-1,1]);zlim([0,1]);
-xlabel('x');ylabel('y');zlabel('z');
-figure;
-test_hist = histogram(theta_test,'Normalization','probability');
-title('Test Distribution');
-xlabel('\theta');
-test_hist.BinEdges = linspace(0, pi/2,bin_numbers);
-test_values = test_hist.Values;
+[new_labels, distances] = LabelsPrediction(classifiers, data);
+PlotBarycentric(distances);
+corrected_guess = sum(data_labels==new_labels)/(dataset_size*length(labels)) * 100
 
-smooth_dist = -log(sum(sqrt(smooth_values .* test_values)))
-rough_dist = -log(sum(sqrt(rough_values .* test_values)))
-super_smooth_dist = -log(sum(sqrt(super_rough_values .* test_values)))
+while true
+    old_labels = new_labels;
+    for i=1:length(labels)
+        labelled_data{i} = {data(old_labels==labels(i),:),labels(i)};
+    end
+    classifiers = ComputeClassifier(labelled_data);
+    [new_labels, distances] = LabelsPrediction(classifiers, data);
+    if (sum(new_labels - old_labels) == 0)
+        break;
+    end
+    PlotBarycentric(distances);
+    corrected_guess = sum(data_labels==new_labels)/(dataset_size*length(labels)) * 100
+
+end

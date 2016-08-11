@@ -28,6 +28,6 @@ xlabel('x');ylabel('y');
 weights = normr(1.0 ./ distances);
 interp = weights * anchors';
 hold on;
-plot(interp(:,1),interp(:,2), '.b');
 plot(anchors(1,:),anchors(2,:), '.r', 'MarkerSize', 20);
-end
+plot(interp(:,1),interp(:,2), '.b');
+% end
