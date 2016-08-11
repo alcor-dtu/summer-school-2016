@@ -54,10 +54,12 @@ theta_beckmann_super_rough = atan(sqrt(-a_super_rough^2 * log(1-eps1)));
 [x, y, z] = sph2cart(phi,pi/2 - theta_beckmann_super_rough,rho);
 figure;
 plot3(x, y, z, '.r');
+title('Super Rough Normals');
 axis equal;
 xlim([-1,1]);ylim([-1,1]);zlim([0,1]);
 xlabel('x');ylabel('y');zlabel('z');
 figure;
+title('Super Rough Distribution');
 super_rough_hist = histogram(theta_beckmann_super_rough, 'Normalization', 'probability');
 xlabel('\theta');
 super_rough_hist.BinEdges = linspace(0, pi/2,bin_numbers);
@@ -72,22 +74,26 @@ smooth_super_rough_dist = -log(sum(sqrt(smooth_values .* super_rough_values)))
 rough_super_rough_dist = -log(sum(sqrt(super_rough_values .* rough_values)))
 
 a_test = rand(1);
-eps1 = rand(dataset_size, data_size);
-eps2 = rand(dataset_size, data_size);
+eps1 = rand(dataset_size, 20);
+eps2 = rand(dataset_size, 20);
 phi = 2 * pi * eps2;
 theta_test = atan(sqrt(-a_test^2 * log(1-eps1)));
-[x, y, z] = sph2cart(phi,pi/2 - theta_test,rho);
+[x, y, z] = sph2cart(phi,pi/2 - theta_test,rho(1:20));
 figure;
 plot3(x, y, z, '.r');
+title('Test Normals');
 axis equal;
 xlim([-1,1]);ylim([-1,1]);zlim([0,1]);
 xlabel('x');ylabel('y');zlabel('z');
 figure;
 test_hist = histogram(theta_test,'Normalization','probability');
+title('Test Distribution');
 xlabel('\theta');
 test_hist.BinEdges = linspace(0, pi/2,bin_numbers);
 test_values = test_hist.Values;
 
-smooth_dist
-rough_dist
-super_smooth_dist
+smooth_dist = -log(sum(sqrt(smooth_values .* test_values)))
+rough_dist = -log(sum(sqrt(rough_values .* test_values)))
+super_smooth_dist = -log(sum(sqrt(super_rough_values .* test_values)))
+
+aaa = histcounts(theta_test,'Normalization','probability');
